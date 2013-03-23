@@ -1,0 +1,207 @@
+#!/bin/bash
+#   mkisi 1.0.5 by Wahyu Agung <wagungs@gmail.com> 2013 Mar
+#   Copyright (C) 2013 Wahyu Agung (wagung)
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+
+. /etc/mkisi-config/mkisi.conf
+
+#if configuration miss or empty
+if [ "$Exts" = "" ]; then
+Exts="isi"
+fi
+
+testroot="`whoami`"
+if [ "$testroot" = "root" ]; then
+     echo "mkisi is not supposed to be run as root."
+     echo "Sorry........"
+     exit 1
+fi
+
+if echo $PWD | grep -E '[ "]' >/dev/null 
+  then
+  echo ""
+  echo "Mkisi Error The Folder Path Contains Spaces"
+  echo ""
+  exit 1
+fi
+
+help_man () {
+	 echo " "
+     echo " mkisi is a simple command line interface for downloading packages "
+     echo " and generate self-extractable tar.gz (default .isi) "
+     echo " "
+     echo "Usage :"
+     echo " "
+     echo " mkisi update ubuntuversion                   : Retrieve new lists of packages"
+     echo " mkisi download ubuntuversion package_name    : Download packages"
+     echo " mkisi list ubuntuversion package_name        : Generate package download list" 
+     echo " mkisi sfx package_name dir_contains_package  : Generate self-extractable tar.gz (.isi)"
+     echo " mkisi --version                              : Display version"
+     echo " mkisi --help                                 : Display help"
+     echo " " 
+     echo "Current Ubuntu version supported :"
+     echo " "
+     echo " precise64 : Ubuntu 12.04 Precise 64Bit"
+     echo " precise32 : Ubuntu 12.04 Precise 32Bit"
+     echo " quantal64 : Ubuntu 12.10 Quantal 64Bit"
+     echo " quantal32 : Ubuntu 12.10 Quantal 32Bit"
+     echo " raring64  : Ubuntu 13.04 Quantal 64Bit"
+     echo " raring32  : Ubuntu 13.04 Quantal 32Bit"
+     echo " "
+     exit 1
+}
+
+create_configdir () {
+template_dir=/etc/mkisi-config/dpkg-status-template
+source_dir=/etc/mkisi-config/source-template
+echo "Create config...."	
+mkdir -p $HOME/.config/mkisi/$input/{cache,config}
+cp -r /etc/mkisi-config/cache/* $HOME/.config/mkisi/$input/cache
+cp -r /etc/mkisi-config/config/* $HOME/.config/mkisi/$input/config
+cp -r $template_dir/status-$input /$HOME/.config/mkisi/$input/cache/status
+cp -r $source_dir/sources-$input /$HOME/.config/mkisi/$input/config/sources.list
+apt_conf_dir=$HOME/.config/mkisi/$input
+ARCH="`echo "$input" | grep -o '[0-9]*'`"
+if [ "$ARCH" = "32" ]; then
+echo 'APT::Architecture "i386";' >> $HOME/.config/mkisi/$input/apt.conf
+else
+echo 'APT::Architecture "amd64";' >> $HOME/.config/mkisi/$input/apt.conf
+fi
+cat >> $HOME/.config/mkisi/$input/apt.conf <<FOO
+Dir::Cache "$apt_conf_dir/cache/cache";
+Dir::Etc "$apt_conf_dir/config/";
+Dir::State::Lists "$apt_conf_dir/cache/lists";
+Dir::State::status "$apt_conf_dir/cache/status";
+FOO
+echo "Done..."
+}  
+
+validate_1 () {
+if [ ! -d "$HOME/.config/mkisi/$input" ]; then
+create_configdir
+fi	
+if [ ! -f "$HOME/.config/mkisi/$input/cache/lists/lock" ]; then
+apt-get update
+fi
+cari="`apt-cache pkgnames $package_name`"
+if [ "${cari}" = "" ]; then
+echo "Unable to locate package"
+exit
+fi	
+} 
+
+mark_package () {
+ARCH="`echo "$input" | grep -o '[0-9]*'`"
+VERS="`echo "$input" | grep -o '[a-zA-Z]*'`"
+echo "$ARCH
+$VERS" > $PWD/$DIST-$package_name/checkme
+}	 
+
+download_package () {
+export APT_CONFIG="$HOME/.config/mkisi/$input/apt.conf"
+validate_1	
+DIST=$input
+mkdir -p $PWD/$DIST-$package_name
+apt-get -y -o dir::cache::archives="$PWD/$DIST-$package_name" install -d $package_name
+rm -rf $PWD/$DIST-$package_name/lock
+rm -rf $PWD/$DIST-$package_name/partial
+mark_package
+cp -r /etc/mkisi-config/setup-script/setup $PWD/$DIST-$package_name/setup
+makeself --nocomp --nowait $PWD/$DIST-$package_name/ $package_name-$input.$Exts "$package_name-$input" ./setup
+echo "Done"
+rm -r $PWD/$DIST-$package_name/setup
+}
+
+create_isi () {	
+cek1="`find $PWD/$package_name/* | grep .deb`"
+cek2="`find $PWD/$package_name/* | grep amd64`"
+if [ "${cek1}" = "" ]; then
+echo "Unable to find .deb package"
+exit
+fi
+if [ "${cek2}" = "" ]; then
+echo "32" > $PWD/$package_name/checkme
+else
+echo "64" > $PWD/$package_name/checkme
+fi
+echo "create .isi offline installer"
+cp -r /etc/mkisi-config/setup-script/setup0 $PWD/$package_name/setup
+makeself --nocomp --nowait $PWD/$package_name/ $input.$Exts "$input" ./setup
+echo "Done"
+rm -r $PWD/$package_name/setup
+}
+
+create_list () {
+validate_1
+echo "Create list of package...."	
+apt-get -qq --print-uris install $package_name | cut -d\' -f2 | grep http:// > $PWD/$input-$package_name.txt
+echo "Done..."
+}	
+
+case $1  in
+  download|-d)
+  input=$2
+  package_name=$3
+  export APT_CONFIG=$HOME/.config/mkisi/$input/apt.conf		
+  dist=(precise64 precise32 quantal64 quantal32 raring64 raring32)
+  if [[ ${dist[*]} =~ $input ]]
+  then
+  download_package
+  else
+  echo " Ubuntu Version Not Supported.."
+  fi
+     ;;
+
+  list|-l) 
+  input=$2
+  package_name=$3
+  export APT_CONFIG=$HOME/.config/mkisi/$input/apt.conf			
+  dist=(precise64 precise32 quantal64 quantal32 raring64 raring32)
+  if [[ ${dist[*]} =~ $input ]]
+  then
+  create_list
+  else
+  echo " Ubuntu Version Not Supported.."
+  fi
+     ;;
+     
+  update|-u)
+  input=$2
+  export APT_CONFIG=$HOME/.config/mkisi/$input/apt.conf	
+  dist=(precise64 precise32 quantal64 quantal32 raring64 raring32)
+  if [[ ${dist[*]} =~ $input ]]
+  then
+  validate_1
+  apt-get update
+  else
+  echo " Ubuntu Version Not Supported.."
+  fi
+    ;;
+  
+  sfx)
+  input=$2
+  package_name=$3
+  create_isi
+  ;;
+     
+  --version|-v)
+  echo ""
+  echo "mkisi 1.0.5 by Wahyu Agung <wagungs@gmail.com> "
+  echo "Copyright (C) 2013 Wahyu Agung (wagung)"
+  echo ""
+  ;;   
+  
+  --help|-h|*)
+     help_man
+     ;;
+esac

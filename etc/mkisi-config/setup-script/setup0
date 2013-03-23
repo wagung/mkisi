@@ -1,0 +1,52 @@
+#!/bin/bash
+
+ARSI="`cat $PWD/checkme | grep -o '[0-9]*'`"
+ARCH="`uname -m | sed 's/x86_//;s/i[3-6]86/32/'`"
+
+gui-mode()
+{
+#validate ubuntu version and architecture
+if [ "${ARCH}" != "${ARSI}" ]; then
+zenity --error --text="Wrong CPU Architecture \!"
+exit
+fi
+
+testRoot="`whoami`"
+if [ "${testRoot}" != "root" ]; then
+  gksudo ${0}
+  exit 0
+fi
+
+#Zenity dialog installation
+zenity --question --title="Package Installation" \
+   --text="do you want to install this package"
+if [ $? -eq 0 ] ; then 
+echo | xterm -e "sudo dpkg -EG -i *.deb; sleep 4"
+else
+  zenity --warning --text="Installation Canceled By user\!"
+fi
+}
+
+text-mode()
+{
+#validate ubuntu version and architecture
+if [ "${ARCH}" != "${ARSI}" ]; then
+echo -e "\e[00;31mWrong CPU Architecture..\e[00m"
+exit
+fi	
+
+#installation process
+clear
+read -n1 -p "Do you want to install this package?? (y/n) "
+echo
+[[ $REPLY = [yY] ]] && sudo dpkg -EG -i *.deb; \
+echo -e "Installation Finished"; sleep 3; exit || \
+{ echo "Installation canceled."; exit 1; }
+}
+
+cekzenity=`which zenity`
+if [ "$cekzenity" = "" ]; then
+text-mode
+else
+gui-mode
+fi

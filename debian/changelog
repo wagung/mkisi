@@ -1,0 +1,56 @@
+mkisi (1.0.5precise3) precise; urgency=low
+
+  * Add error messages when running on directory contains spaces 
+
+ -- Wahyu Agung (wagung) <wagungs@gmail.com>  Sat, 23 Mar 2013 20:49:47 +0800
+
+mkisi (1.0.5raring2) raring; urgency=low
+
+  * Fix some errors
+
+ -- Wahyu Agung (wagung) <wagungs@gmail.com>  Tue, 19 Mar 2013 18:48:50 +0800
+
+mkisi (1.0.5raring1) raring; urgency=low
+
+  * Add setup0 script for sfx option
+
+ -- Wahyu Agung (wagung) <wagungs@gmail.com>  Tue, 19 Mar 2013 11:31:41 +0800
+
+mkisi (1.0.4quantal1) quantal; urgency=low
+
+  * Fix some errors
+
+ -- Wahyu Agung (wagung) <wagungs@gmail.com>  Tue, 19 Mar 2013 09:15:06 +0800
+
+mkisi (1.0.3raring1) raring; urgency=low
+
+  * Add new setup script
+  * Fix default configuration
+
+ -- Wahyu Agung (wagung) <wagungs@gmail.com>  Mon, 18 Mar 2013 22:08:03 +0800
+
+mkisi (1.0.2raring1) raring; urgency=low
+
+  * Add raring support
+
+ -- Wahyu Agung (wagung) <wagungs@gmail.com>  Mon, 18 Mar 2013 18:44:32 +0800
+
+mkisi (1.0.1raring1) raring; urgency=low
+
+  * Initial build release
+
+ -- Wahyu Agung (wagung) <wagungs@gmail.com>  Mon, 18 Mar 2013 15:04:50 +0800
+
+mkisi (1.0.1quantal1) quantal; urgency=low
+
+  * Initial build release
+
+ -- Wahyu Agung (wagung) <wagungs@gmail.com>  Mon, 18 Mar 2013 15:03:02 +0800
+
+mkisi (1.0.1precise1) precise; urgency=low
+
+  * Initial build release
+
+ -- Wahyu Agung (wagung) <wagungs@gmail.com>  Mon, 18 Mar 2013 15:00:29 +0800
+
+

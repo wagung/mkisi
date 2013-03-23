@@ -1,0 +1,16 @@
+Source: mkisi
+Section: admin
+Priority: optional
+Maintainer: Wahyu Agung <wagungs@gmail.com>
+Standards-Version: 3.9.3
+Build-Depends: cdbs, debhelper (>= 8.0.0)
+Homepage: https://github.com/wagungs/mkisi
+VCS-git: git://github.com/wagungs/mkisi.git
+VCS-Browser: https://github.com/wagungs/mkisi
+         
+Package: mkisi
+Architecture: all
+Depends: dpkg, apt, makeself, ${misc:Depends}
+Description: Debian packages downloader
+ mkisi is a simple command line interface for downloading packages
+ and generate self-extractable tar.gz (default .isi)
